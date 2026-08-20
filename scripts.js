@@ -124,4 +124,143 @@ $(document).ready(function () {
     initSlider("latest-track", "latest-prev", "latest-next");
   });
 
+  // Task 5 — Courses page (dynamic search/topic/sort)
+  if ($("#courses-results").length) {
+
+    const $searchInput = $("#course-search");
+    const $topicMenu = $("#topic-dropdown-menu");
+    const $topicLabel = $("#topic-label");
+    const $sortMenu = $("#sort-dropdown-menu");
+    const $sortLabel = $("#sort-label");
+    const $resultsContainer = $("#courses-results");
+    const $videoCount = $(".video-count");
+    const $coursesLoader = $(".results .loader");
+
+    let currentQ = "";
+    let currentTopic = "all";
+    let currentSort = "most_popular";
+    let searchTimeout;
+
+    function formatLabel(value) {
+      return value
+        .split("_")
+        .map(function (word) {
+          return word.charAt(0).toUpperCase() + word.slice(1);
+        })
+        .join(" ");
+    }
+
+    function buildCourseCardsHTML(courses) {
+      let cardsHTML = "";
+
+      for (let i = 0; i < courses.length; i++) {
+        const course = courses[i];
+        let starsHTML = "";
+
+        for (let s = 1; s <= 5; s++) {
+          starsHTML +=
+            s <= course.star
+              ? `<img src="images/star_on.png" alt="star on" width="15px" />`
+              : `<img src="images/star_off.png" alt="star off" width="15px" />`;
+        }
+
+        cardsHTML += `
+          <div class="col-12 col-sm-4 col-lg-3 d-flex justify-content-center">
+            <div class="card">
+              <img src="${course.thumb_url}" class="card-img-top" alt="Video thumbnail" />
+              <div class="card-img-overlay text-center">
+                <img src="images/play.png" alt="Play" width="64px" class="align-self-center play-overlay" />
+              </div>
+              <div class="card-body">
+                <h5 class="card-title font-weight-bold">${course.title}</h5>
+                <p class="card-text text-muted">${course["sub-title"]}</p>
+                <div class="creator d-flex align-items-center">
+                  <img src="${course.author_pic_url}" alt="Creator of Video" width="30px" class="rounded-circle" />
+                  <h6 class="pl-3 m-0 main-color">${course.author}</h6>
+                </div>
+                <div class="info pt-3 d-flex justify-content-between">
+                  <div class="rating">${starsHTML}</div>
+                  <span class="main-color">${course.duration}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      return cardsHTML;
+    }
+
+    function fetchCourses(q, topic, sort) {
+      $coursesLoader.show();
+
+      $.ajax({
+        url: "https://smileschool-api.hbtn.info/courses",
+        data: { q: q, topic: topic, sort: sort },
+        dataType: "json",
+        success: function (response) {
+          $resultsContainer.html(buildCourseCardsHTML(response.courses));
+          $videoCount.text(response.courses.length + " videos");
+          $coursesLoader.hide();
+        },
+        error: function () {
+          $coursesLoader.hide();
+        }
+      });
+    }
+
+    function buildDropdown($menu, $label, values, currentValue, onSelect) {
+      let itemsHTML = "";
+
+      for (let i = 0; i < values.length; i++) {
+        itemsHTML += `<a class="dropdown-item" href="#" data-value="${values[i]}">${formatLabel(values[i])}</a>`;
+      }
+
+      $menu.html(itemsHTML);
+      $label.text(formatLabel(currentValue));
+
+      $menu.find(".dropdown-item").on("click", function (e) {
+        e.preventDefault();
+        const selectedValue = $(this).data("value");
+        $label.text(formatLabel(selectedValue));
+        onSelect(selectedValue);
+      });
+    }
+
+    // Initial load — populates dropdowns from the API's own topic/sort lists
+    $.ajax({
+      url: "https://smileschool-api.hbtn.info/courses",
+      dataType: "json",
+      success: function (response) {
+        currentQ = response.q;
+        currentTopic = response.topic;
+        currentSort = response.sort;
+
+        $searchInput.val(currentQ);
+
+        buildDropdown($topicMenu, $topicLabel, response.topics, currentTopic, function (value) {
+          currentTopic = value;
+          fetchCourses(currentQ, currentTopic, currentSort);
+        });
+
+        buildDropdown($sortMenu, $sortLabel, response.sorts, currentSort, function (value) {
+          currentSort = value;
+          fetchCourses(currentQ, currentTopic, currentSort);
+        });
+
+        $resultsContainer.html(buildCourseCardsHTML(response.courses));
+        $videoCount.text(response.courses.length + " videos");
+        $coursesLoader.hide();
+      }
+    });
+
+    $searchInput.on("input", function () {
+      currentQ = $(this).val();
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(function () {
+        fetchCourses(currentQ, currentTopic, currentSort);
+      }, 400);
+    });
+  }
+
 });
