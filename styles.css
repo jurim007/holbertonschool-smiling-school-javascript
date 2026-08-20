@@ -408,6 +408,27 @@
   }
 }
 
+.slider-viewport {
+  overflow: hidden;
+}
+
+.slider-track {
+  display: flex;
+  transition: transform 0.4s ease;
+}
+
+.slider-track .card {
+  flex: 0 0 auto;
+  margin-right: 20px;
+}
+
+.slider-wrapper .loader {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
 /* SMILES Section  */
 
 .smiles {
