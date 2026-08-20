@@ -429,6 +429,19 @@
   transform: translate(-50%, -50%);
 }
 
+.latest .carousel-control-prev,
+.latest .carousel-control-next {
+  width: 60px;
+}
+
+.latest .carousel-control-prev.arrow-left {
+  left: var(--popular-arrows-x);
+}
+
+.latest .carousel-control-next.arrow-right {
+  right: var(--popular-arrows-x);
+}
+
 /* SMILES Section  */
 
 .smiles {
